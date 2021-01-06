@@ -1,0 +1,158 @@
+{% extends 'master.html' %}
+
+{% block titulo %} Top 3 mejores campeones según la posición {% endblock %}
+
+{% block contenido %}
+<div class="col-sm-12 col-md-12 col-lg-12 col-xl-12 text-center table-responsive">
+	<table class="table table-striped table-hover table-info">
+		<thead class="thead-dark">
+            <tr class="text-center">
+				<th class="align-middle th-dark" colspan="4" scope="col">MEJORES CAMPEONES GLOBALMENTE</th>
+			</tr>
+			<tr class="text-center">
+				<th class="align-middle" scope="col">#</th>
+				<th class="align-middle" scope="col">Nombre del campeón</th>
+				<th class="align-middle" scope="col">Imagen</th>
+				<th class="align-middle" scope="col">Porcentaje de victorias</th>
+			</tr>
+		</thead>
+		<tbody>
+			{% for key, value in campeones.items %}
+				<tr class="text-center">
+					<th class="align-middle" scope="row">{{forloop.counter}}</th>
+					<td class="align-middle">{{key.name}}</td>
+					<td class="align-middle"><img class="w-25 p-1" alt="Display Picture" src="{{key.image}}" /></td>
+					<td class="align-middle">{{value}} %</td>
+				</tr>
+			{% endfor %}		
+		</tbody>
+    </table>
+    
+    <table class="table table-striped table-hover table-info">
+		<thead class="thead-dark">
+            <tr class="text-center">
+				<th class="align-middle th-dark" colspan="4" scope="col">MEJORES CAMPEONES DE LA LÍNEA SUPERIOR</th>
+			</tr>
+			<tr class="text-center">
+				<th class="align-middle" scope="col">#</th>
+				<th class="align-middle" scope="col">Nombre del campeón</th>
+				<th class="align-middle" scope="col">Imagen</th>
+				<th class="align-middle" scope="col">Porcentaje de victorias</th>
+			</tr>
+		</thead>
+		<tbody>
+			{% for key, value in campeones_top.items %}
+				<tr class="text-center">
+					<th class="align-middle" scope="row">{{forloop.counter}}</th>
+					<td class="align-middle">{{key.name}}</td>
+					<td class="align-middle"><img class="w-25 p-1" alt="Display Picture" src="{{key.image}}" /></td>
+					<td class="align-middle">{{value}} %</td>
+				</tr>
+			{% endfor %}		
+		</tbody>
+    </table>
+    
+    <table class="table table-striped table-hover table-info">
+		<thead class="thead-dark">
+            <tr class="text-center">
+				<th class="align-middle th-dark" colspan="4" scope="col">MEJORES CAMPEONES DE LA LÍNEA MEDIO</th>
+			</tr>
+			<tr class="text-center">
+				<th class="align-middle" scope="col">#</th>
+				<th class="align-middle" scope="col">Nombre del campeón</th>
+				<th class="align-middle" scope="col">Imagen</th>
+				<th class="align-middle" scope="col">Porcentaje de victorias</th>
+			</tr>
+		</thead>
+		<tbody>
+			{% for key, value in campeones_mid.items %}
+				<tr class="text-center">
+					<th class="align-middle" scope="row">{{forloop.counter}}</th>
+					<td class="align-middle">{{key.name}}</td>
+					<td class="align-middle"><img class="w-25 p-1" alt="Display Picture" src="{{key.image}}" /></td>
+					<td class="align-middle">{{value}} %</td>
+				</tr>
+			{% endfor %}		
+		</tbody>
+    </table>
+    
+    <table class="table table-striped table-hover table-info">
+		<thead class="thead-dark">
+            <tr class="text-center">
+				<th class="align-middle th-dark" colspan="4" scope="col">MEJORES CAMPEONES DE LA LINEA INFERIOR</th>
+			</tr>
+			<tr class="text-center">
+				<th class="align-middle" scope="col">#</th>
+				<th class="align-middle" scope="col">Nombre del campeón</th>
+				<th class="align-middle" scope="col">Imagen</th>
+				<th class="align-middle" scope="col">Porcentaje de victorias</th>
+			</tr>
+		</thead>
+		<tbody>
+			{% for key, value in campeones_bot.items %}
+				<tr class="text-center">
+					<th class="align-middle" scope="row">{{forloop.counter}}</th>
+					<td class="align-middle">{{key.name}}</td>
+					<td class="align-middle"><img class="w-25 p-1" alt="Display Picture" src="{{key.image}}" /></td>
+					<td class="align-middle">{{value}} %</td>
+				</tr>
+			{% endfor %}		
+		</tbody>
+    </table>
+    
+    <table class="table table-striped table-hover table-info">
+		<thead class="thead-dark">
+            <tr class="text-center">
+				<th class="align-middle th-dark" colspan="4" scope="col">MEJORES CAMPEONES DE JUNGLA</th>
+			</tr>
+			<tr class="text-center">
+				<th class="align-middle" scope="col">#</th>
+				<th class="align-middle" scope="col">Nombre del campeón</th>
+				<th class="align-middle" scope="col">Imagen</th>
+				<th class="align-middle" scope="col">Porcentaje de victorias</th>
+			</tr>
+		</thead>
+		<tbody>
+			{% for key, value in campeones_jungle.items %}
+				<tr class="text-center">
+					<th class="align-middle" scope="row">{{forloop.counter}}</th>
+					<td class="align-middle">{{key.name}}</td>
+					<td class="align-middle"><img class="w-25 p-1" alt="Display Picture" src="{{key.image}}" /></td>
+					<td class="align-middle">{{value}} %</td>
+				</tr>
+			{% endfor %}		
+		</tbody>
+    </table>
+    
+    <table class="table table-striped table-hover table-info">
+		<thead class="thead-dark">
+            <tr class="text-center">
+				<th class="align-middle th-dark" colspan="4" scope="col">MEJORES CAMPEONES DE APOYO</th>
+			</tr>
+			<tr class="text-center">
+				<th class="align-middle" scope="col">#</th>
+				<th class="align-middle" scope="col">Nombre del campeón</th>
+				<th class="align-middle" scope="col">Imagen</th>
+				<th class="align-middle" scope="col">Porcentaje de victorias</th>
+			</tr>
+		</thead>
+		<tbody>
+			{% for key, value in campeones_support.items %}
+				<tr class="text-center">
+					<th class="align-middle" scope="row">{{forloop.counter}}</th>
+					<td class="align-middle">{{key.name}}</td>
+					<td class="align-middle"><img class="w-25 p-1" alt="Display Picture" src="{{key.image}}" /></td>
+					<td class="align-middle">{{value}} %</td>
+				</tr>
+			{% endfor %}		
+		</tbody>
+	</table>
+</div>
+{% endblock %}
+
+
+
+
+
+
+

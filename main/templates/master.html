@@ -1,0 +1,80 @@
+{% load bootstrap4 %}
+{% bootstrap_css %}
+
+{% load static %}
+
+<!DOCTYPE html>
+<html lang='es'>
+
+<head>
+	<meta charset='utf-8'>
+	<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+</head>
+
+<body>
+
+	<nav class="navbar navbar-expand-lg navbar-light" style="background-color: #86cfda;"">
+		<a class="navbar-brand" href="\"><img src="https://i.ibb.co/Z6n2WcY/logo.png"" alt="StreamSurfer"></a>
+		<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+			<span class="navbar-toggler-icon"></span>
+		</button>
+		<div class="collapse navbar-collapse" id="navbarNavDropdown">
+		  <ul class="navbar-nav">
+			<li class="nav-item dropdown">
+				<a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+					Acciones de poblar
+				</a>
+				<div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink1">
+					<a class="dropdown-item" href="/actualizar_bd">Poblar base de datos - Acceso Restringido</a>
+				</div>
+			</li>
+			<li class="nav-item dropdown">
+				<a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+					Acciones de listar
+				</a>
+				<div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink2">
+					<a class="dropdown-item" href="/peliculas">Lista de películas</a>
+					<a class="dropdown-item" href="/series">Lista de series</a>
+					<a class="dropdown-item" href="/mejores_campeones">Top 3 mejores campeones según la posición</a>
+					<a class="dropdown-item" href="/mejores_jugadores">Top 3 mejores jugadores</a>
+					<a class="dropdown-item" href="/counterest_campeones">Top 5 campeones más fuertes</a>
+					<a class="dropdown-item" href="/weak_campeones">Top 5 campeones más débiles</a>
+				</div>
+			</li>
+			<li class="nav-item dropdown">
+				<a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink3" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+					Acciones de búsqueda
+				</a>
+				<div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink3">
+					<a class="dropdown-item" href="/seach_champion">Buscar campeón por nombre</a>
+					<a class="dropdown-item" href="/seach_player">Buscar jugador por nombre</a>
+					<a class="dropdown-item" href="/campeones_posicion">Buscar campeones por posición</a>
+					<a class="dropdown-item" href="/list_campeones_por_posicion_tier">Buscar campeones por posición y nivel</a>
+					<a class="dropdown-item" href="/seach_champions_dates">Buscar campeón por rango de fechas</a>
+				</div>
+			</li>
+			<li class="nav-item dropdown">
+				<a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink4" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+					Acciones de sistemas de recomendación
+				</a>
+				<div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink4">
+					<a class="dropdown-item" href="/recomend_champion">Buscar campeones recomendados según un campeón determinado</a>
+					<a class="dropdown-item" href="/recomend_player">Buscar jugadores recomendados según un jugador determinado</a>
+				</div>
+			</li>
+		  </ul>
+		</div>
+	  </nav>
+
+	<main style="background-color: #EDEEE9; background-size: cover;	background-position: center; background-repeat: repeat-y;">
+		<div class="container">
+			<div class="row d-flex justify-content-center">
+				<h1 class="my-5 text-center">{% block titulo %} {% endblock %}</h1>
+				{% block contenido %} {% endblock %}
+			</div>
+		</div>
+	</main>
+</body>
+</html>
+
+{% bootstrap_javascript jquery='full' %}

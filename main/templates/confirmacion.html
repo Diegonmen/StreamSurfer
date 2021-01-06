@@ -1,0 +1,24 @@
+{% extends 'master.html' %}
+
+{% block titulo %}Confirmación recarga base de datos{% endblock %}
+
+
+{% block contenido %}
+
+<div class="col-sm-12 col-md-12 col-lg-12 col-xl-12 text-center" style="margin-bottom: 400px;">
+    <div class="card card-signin" style="background-color: #e3f2fd;">
+        <div class="card-body text-center">
+            <h4 style="margin-bottom: 100px;">AVISO: Este proceso es lento, borra la base de datos actual y requiere conexion a internet</h4>
+            <form id='formulario' method='post' action=''>{% csrf_token %}
+                <input type="submit" name="Aceptar" value="Aceptar">
+                <input type="submit" name="Cancelar" value="Cancelar">
+            </form>
+        </div>
+    </div>
+    <div clas="text-center">
+        <img class="my-5" src="https://i.ibb.co/6wy39vf/logo.png" />
+    </div>
+</div>
+
+
+{% endblock %}

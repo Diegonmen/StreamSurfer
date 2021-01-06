@@ -1,0 +1,45 @@
+{% extends 'master.html' %}
+
+{% block titulo %} Búsqueda de campeones por rango de fechas {% endblock %}
+
+{% block contenido %}
+<div class="jumbotron text-center col-6">
+    <form id="formulario" method="post" action='' class="form-signin">{% csrf_token %}
+        <fieldset class="form-group">
+            <label for="startDate" class="h4">Fecha de inicio</label>
+            <input class="form-control d-inline mb-3" type="date" name="startDate" id="startDate" placeholder="Fecha de inicio" />
+            <label for="endDate" class="h4 mt-2">Fecha de fin</label>
+            <input class="form-control d-inline" type="date" name="endDate" id="endDate" placeholder="Fecha de fin" />
+            <button class="btn btn-secondary btn-block d-inline mt-3" type="submit">Realizar búsqueda</button>
+        </fieldset class="form-group">
+    </form>
+</div>
+
+{% if campeones %}
+<div class="col-sm-12 col-md-12 col-lg-12 col-xl-12 text-center table-responsive">
+	<table class="table table-striped table-hover table-info" style="margin-bottom: 180px;">
+		<thead class="thead-dark">
+			<tr class="text-center">
+				<th class="align-middle" scope="col">#</th>
+				<th class="align-middle" scope="col">Nombre del campeón</th>
+				<th class="align-middle" scope="col">Imagen</th>
+				<th class="align-middle" scope="col">Fecha de lanzamiento</th>
+			</tr>
+		</thead>
+		<tbody>
+			{% regroup campeones by name as grouped %}
+			{% for group in grouped %}
+				{% for champion in group.list %}
+				<tr class="text-center">
+					<th class="align-middle" scope="row">{{forloop.parentloop.counter}}</th>
+					<td class="align-middle">{{champion.name}}</td>
+					<td class="align-middle"><img class="w-25 p-1" alt="Display Picture" src="{{champion.image}}" /></td>
+					<td class="align-middle">{{champion.releaseDate}}</td>
+				</tr>
+				{% endfor %}
+			{% endfor %}		
+		</tbody>
+	</table>
+</div>
+{% endif %}
+{% endblock %}  

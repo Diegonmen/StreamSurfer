@@ -1,0 +1,21 @@
+{% extends 'master.html' %}
+
+{% block titulo %}Base de datos recargada{% endblock %}
+
+
+{% block contenido %}
+
+<div class="col-sm-12 col-md-12 col-lg-12 col-xl-12 text-center" style="margin-bottom: 400px;">
+    <div class="card card-signin" style="background-color: #e3f2fd;">
+        <div class="card-body text-center">
+            <h3 class="card-title">Se ha recargado la base de datos con exito</h3>
+            <p class="card-text">{{mensaje}}</p>
+        </div>
+    </div>
+    <div clas="text-center">
+        <img class="my-5" src="https://i.ibb.co/6wy39vf/logo.png" />
+    </div>
+</div>
+
+
+{% endblock %}

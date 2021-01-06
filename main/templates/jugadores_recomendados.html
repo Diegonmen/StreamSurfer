@@ -1,0 +1,45 @@
+{% extends 'master.html' %}
+
+{% block titulo %} Búsqueda de jugadores recomendados según uno dado {% endblock %}
+
+{% block contenido %}
+<div class="jumbotron text-center col-6">
+    <form id="formulario" method="post" action='' class="form-signin">{% csrf_token %}
+        <fieldset class="form-group">
+            <label for="player_name" class="h4">Nombre del jugador</label>
+            <input class="form-control d-inline" type="text" name="player_name" id="champion_name" placeholder="Nombre del jugador" />
+            <button class="btn btn-secondary btn-block d-inline mt-2" type="submit">Realizar búsqueda</button>
+        </fieldset class="form-group">
+    </form>
+</div>
+
+{% if jugadores %}
+<div class="col-sm-12 col-md-12 col-lg-12 col-xl-12 text-center table-responsive">
+	<table class="table table-striped table-hover table-info" style="margin-bottom: 550px;">
+		<thead class="thead-dark">
+			<tr class="text-center">
+				<th class="align-middle" scope="col">#</th>
+				<th class="align-middle" scope="col">Nombre del jugador</th>
+				<th class="align-middle" scope="col">Enlace a su perfil</th>
+				<th class="align-middle" scope="col">Puesto de posicionamiento</th>
+				<th class="align-middle" scope="col">Porcentaje de victorias</th>
+			</tr>
+		</thead>
+		<tbody>
+			{% regroup jugadores by name as grouped %}
+			{% for group in grouped %}
+				{% for player in group.list %}
+				<tr class="text-center">
+					<th class="align-middle" scope="row">{{forloop.parentloop.counter}}</th>
+					<td class="align-middle">{{player.name}}</td>
+					<td class="align-middle"><a target=_blank href="{{player.urlPerfil}}">{{player.urlPerfil}}</a></td>
+					<td class="align-middle">{{player.ranking}}</td>
+					<td class="align-middle">{{player.winrate}} %</td>
+				</tr>
+				{% endfor %}
+			{% endfor %}		
+		</tbody>
+	</table>
+</div>
+{% endif %}
+{% endblock %}
