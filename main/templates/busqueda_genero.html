@@ -1,0 +1,180 @@
+{% extends 'master.html' %}
+{% load filter_tags %}
+
+{% block titulo %} Búsqueda de una serie o película por su genero {% endblock %}
+
+{% block contenido %}
+<div class="jumbotron text-center">
+    <form id="formulario" method="post" action='' class="form-signin card card-signin" style="background-color: #e3f2fd;padding: 50px;">{% csrf_token %}
+        <fieldset class="form-group">
+            <label for="title" class="h4" style="margin-bottom: 25px;">Géneros</label>
+            <select class="d-inline custom-select" name="generos" required>
+				<option value='Acción & Aventura'>Acción & Aventura</option>
+				<option value='Animación'>Animación</option>
+				<option value='Comedia'>Comedia</option>
+				<option value='Crimen'>Crimen</option>
+				<option value='Documental'>Documental</option>
+				<option value='Drama'>Drama</option>
+				<option value='Fantasía'>Fantasía</option>
+				<option value='Historia'>Historia</option>
+				<option value='Terror'>Terror</option>
+				<option value='Familia'>Familia</option>
+				<option value='Música'>Música</option>
+				<option value='Misterio & Suspense'>Misterio & Suspense</option>
+				<option value='Romance'>Romance</option>
+				<option value='Ciencia Ficción'>Ciencia Ficción</option>
+				<option value='Deporte'>Deporte</option>
+				<option value='Guerra'>Guerra</option>
+				<option value='Western'>Western</option>
+				<option value='Reality TV'>Reality TV</option>
+				<option value='Made in Europe'>Made in Europe</option>
+			</select>
+            <button class="btn btn-secondary btn-block d-inline mt-2" type="submit">Realizar búsqueda</button>
+        </fieldset class="form-group">
+    </form>
+</div>
+
+<div class="col-sm-12 col-md-12 col-lg-12 col-xl-12 text-center table-responsive">
+	{% if peliculas %}
+	<label for="peliculas" class="h4" style="margin-bottom: 25px;">Películas</label>
+    <table class="table table-striped table-hover table-info" style="margin-bottom: 50px;">
+		<thead class="thead-dark">
+			<tr class="text-center">
+				<th class="align-middle" scope="col">#</th>
+				<th class="align-middle" scope="col">Póster</th>
+				<th class="align-middle" scope="col">Título</th>
+				<th class="align-middle" scope="col">Géneros</th>
+				<th class="align-middle" scope="col">Título original</th>
+				<th class="align-middle" scope="col">Duración</th>
+				<th class="align-middle" scope="col">Fecha de estreno</th>
+				<th class="align-middle" scope="col">Puntuación en IMDB</th>
+				<th class="align-middle" scope="col">Director</th>
+				<th class="align-middle" scope="col">Opciones de streaming</th>
+			</tr>
+		</thead>
+		<tbody>
+			{% for pelicula in peliculas %}
+				<tr class="text-center">
+					<th class="align-middle" scope="row">{{forloop.counter}}</th>
+					<td class="align-middle"><img width="150" alt="Poster" src="{{pelicula.poster}}" /></td>
+					<td class="align-middle">{{pelicula.titulo}}</td>
+					<td class="align-middle">{{pelicula.generos}}</td>
+					<td class="align-middle">{{pelicula.tituloOriginal}}</td>
+					<td class="align-middle">{{pelicula.duracion}}</td>
+					<td class="align-middle">{{pelicula.fechaEstreno}}</td>
+					<td class="align-middle">{{pelicula.imdb}}</td>
+					<td class="align-middle">{{pelicula.director}}</td>
+					<td class="align-middle">
+					{% for plataforma, link in pelicula.a.streamsPelicula.items %}
+						{% if plataforma == "Netflix" %}
+							<a href="{{link}}" target="_blank"><img class="w-75 p-1" alt="Icon" src="https://images.justwatch.com/icon/207360008/s100"/></a>
+						{% endif %}
+						{% if plataforma == "Rakuten TV" %}
+							<a href="{{link}}" target="_blank"><img class="w-75 p-1" alt="Icon" src="https://images.justwatch.com/icon/128599720/s100"/></a>
+						{% endif %}
+						{% if plataforma == "Amazon Prime Video" %}
+							<a href="{{link}}" target="_blank"><img class="w-75 p-1" alt="Icon" src="https://images.justwatch.com/icon/52449861/s100"/></a>
+						{% endif %}
+						{% if plataforma == "Atres Player" %}
+							<a href="{{link}}" target="_blank"><img class="w-75 p-1" alt="Icon" src="https://images.justwatch.com/icon/179272126/s100"/></a>
+						{% endif %}
+						{% if plataforma == "HBO" %}
+							<a href="{{link}}" target="_blank"><img class="w-75 p-1" alt="Icon" src="https://images.justwatch.com/icon/3748099/s100"/></a>
+						{% endif %}
+						{% if plataforma == "Movistar Plus" %}
+							<a href="{{link}}" target="_blank"><img class="w-75 p-1" alt="Icon" src="https://images.justwatch.com/icon/5985414/s100"/></a>
+						{% endif %}
+						{% if plataforma == "Disney Plus" %}
+							<a href="{{link}}" target="_blank"><img class="w-75 p-1" alt="Icon" src="https://images.justwatch.com/icon/147638351/s100"/></a>
+						{% endif %}
+						{% if plataforma == "Filmin" %}
+							<a href="{{link}}" target="_blank"><img class="w-75 p-1" alt="Icon" src="https://images.justwatch.com/icon/187161245/s100"/></a>
+						{% endif %}
+						{% if plataforma == "Apple TV Plus" %}
+							<a href="{{link}}" target="_blank"><img class="w-75 p-1" alt="Icon" src="https://images.justwatch.com/icon/152862153/s100"/></a>
+						{% endif %}
+						{% if plataforma == "Crunchyroll" %}
+							<a href="{{stream.1}}" target="_blank"><img class="w-75 p-1" alt="Icon" src="https://images.justwatch.com/icon/127445869/s100"/></a>
+						{% endif %}
+						{% if plataforma == '' %}
+							<a>Sin opciones de streaming</a>
+						{% endif %}
+					{% endfor %}
+					</td>
+				</tr>
+			{% endfor %}		
+		</tbody>
+	</table>
+	
+    {% endif %}
+	{% if series %}
+	<label for="series" class="h4" style="margin-bottom: 25px;">Series</label>
+    <table class="table table-striped table-hover table-info w-100 h-auto">
+		<thead class="thead-dark">
+			<tr class="text-center">
+				<th class="align-middle" scope="col">#</th>
+				<th class="align-middle" scope="col">Póster</th>
+				<th class="align-middle" scope="col">Título</th>
+				<th class="align-middle" scope="col">Géneros</th>
+				<th class="align-middle" scope="col">Título original</th>
+				<th class="align-middle" scope="col">Fecha de estreno</th>
+				<th class="align-middle" scope="col">Puntuación en IMDB</th>
+				<th class="align-middle" scope="col">Temporadas</th>
+				<th class="align-middle" scope="col">Opciones de streaming</th>
+			</tr>
+		</thead>
+		<tbody>
+			{% for serie in series %}
+				<tr class="text-center">
+					<th class="align-middle" scope="row">{{forloop.counter}}</th>
+					<td class="align-middle"><img width="150" alt="Poster" src="{{serie.poster}}" /></td>
+					<td class="align-middle">{{serie.titulo}}</td>
+					<td class="align-middle">{{serie.generos}}</td>
+					<td class="align-middle">{{serie.tituloOriginal}}</td>
+					<td class="align-middle">{{serie.fechaEstreno}}</td>
+					<td class="align-middle">{{serie.imdb}}</td>
+					<td class="align-middle">{{serie.temporadas}}</td>
+					<td class="align-middle">
+					{% for plataforma, link in serie.a.streamsSerie.items %}
+						{% if plataforma == "Netflix" %}
+							<a href="{{link}}" target="_blank"><img class="w-75 p-1" alt="Icon" src="https://images.justwatch.com/icon/207360008/s100"/></a>
+						{% endif %}
+						{% if plataforma == "Rakuten TV" %}
+							<a href="{{link}}" target="_blank"><img class="w-75 p-1" alt="Icon" src="https://images.justwatch.com/icon/128599720/s100"/></a>
+						{% endif %}
+						{% if plataforma == "Amazon Prime Video" %}
+							<a href="{{link}}" target="_blank"><img class="w-75 p-1" alt="Icon" src="https://images.justwatch.com/icon/52449861/s100"/></a>
+						{% endif %}
+						{% if plataforma == "Atres Player" %}
+							<a href="{{link}}" target="_blank"><img class="w-75 p-1" alt="Icon" src="https://images.justwatch.com/icon/179272126/s100"/></a>
+						{% endif %}
+						{% if plataforma == "HBO" %}
+							<a href="{{link}}" target="_blank"><img class="w-75 p-1" alt="Icon" src="https://images.justwatch.com/icon/3748099/s100"/></a>
+						{% endif %}
+						{% if plataforma == "Movistar Plus" %}
+							<a href="{{link}}" target="_blank"><img class="w-75 p-1" alt="Icon" src="https://images.justwatch.com/icon/5985414/s100"/></a>
+						{% endif %}
+						{% if plataforma == "Disney Plus" %}
+							<a href="{{link}}" target="_blank"><img class="w-75 p-1" alt="Icon" src="https://images.justwatch.com/icon/147638351/s100"/></a>
+						{% endif %}
+						{% if plataforma == "Filmin" %}
+							<a href="{{link}}" target="_blank"><img class="w-75 p-1" alt="Icon" src="https://images.justwatch.com/icon/187161245/s100"/></a>
+						{% endif %}
+						{% if plataforma == "Apple TV Plus" %}
+							<a href="{{link}}" target="_blank"><img class="w-75 p-1" alt="Icon" src="https://images.justwatch.com/icon/152862153/s100"/></a>
+						{% endif %}
+						{% if plataforma == "Crunchyroll" %}
+							<a href="{{stream.1}}" target="_blank"><img class="w-75 p-1" alt="Icon" src="https://images.justwatch.com/icon/127445869/s100"/></a>
+						{% endif %}
+						{% if plataforma == '' %}
+							<a>Sin opciones de streaming</a>
+						{% endif %}
+					{% endfor %}
+					</td>
+				</tr>
+			{% endfor %}		
+		</tbody>
+    </table>
+    {% endif %}
+</div>
+{% endblock %}

@@ -3,6 +3,7 @@
 
 {% load static %}
 
+
 <!DOCTYPE html>
 <html lang='es'>
 
@@ -26,6 +27,7 @@
 				</a>
 				<div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink1">
 					<a class="dropdown-item" href="/actualizar_bd">Poblar base de datos - Acceso Restringido</a>
+					<a class="dropdown-item" href="/actualizar_whoosh">Poblar base de datos de Whoosh - Acceso Restringido</a>
 				</div>
 			</li>
 			<li class="nav-item dropdown">
@@ -35,10 +37,6 @@
 				<div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink2">
 					<a class="dropdown-item" href="/peliculas">Lista de películas</a>
 					<a class="dropdown-item" href="/series">Lista de series</a>
-					<a class="dropdown-item" href="/mejores_campeones">Top 3 mejores campeones según la posición</a>
-					<a class="dropdown-item" href="/mejores_jugadores">Top 3 mejores jugadores</a>
-					<a class="dropdown-item" href="/counterest_campeones">Top 5 campeones más fuertes</a>
-					<a class="dropdown-item" href="/weak_campeones">Top 5 campeones más débiles</a>
 				</div>
 			</li>
 			<li class="nav-item dropdown">
@@ -46,11 +44,9 @@
 					Acciones de búsqueda
 				</a>
 				<div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink3">
-					<a class="dropdown-item" href="/seach_champion">Buscar campeón por nombre</a>
-					<a class="dropdown-item" href="/seach_player">Buscar jugador por nombre</a>
-					<a class="dropdown-item" href="/campeones_posicion">Buscar campeones por posición</a>
-					<a class="dropdown-item" href="/list_campeones_por_posicion_tier">Buscar campeones por posición y nivel</a>
-					<a class="dropdown-item" href="/seach_champions_dates">Buscar campeón por rango de fechas</a>
+					<a class="dropdown-item" href="/busqueda_titulo">Buscar por título</a>
+					<a class="dropdown-item" href="/busqueda_plataforma">Buscar por plataforma de streaming</a>
+					<a class="dropdown-item" href="/busqueda_genero">Buscar por género</a>
 				</div>
 			</li>
 			<li class="nav-item dropdown">
