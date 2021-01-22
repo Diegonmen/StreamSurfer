@@ -1,19 +1,19 @@
 {% extends 'master.html' %}
 
-{% block titulo %} Búsqueda de una serie o película por su título {% endblock %}
+{% block titulo %} Búsqueda de una serie o película por su puntuación {% endblock %}
 
 {% block contenido %}
 <div class="jumbotron text-center">
     <form id="formulario" method="post" action='' class="form-signin card card-signin" style="background-color: #e3f2fd;padding: 50px;">{% csrf_token %}
         <fieldset class="form-group">
-            <label for="title" class="h4" style="margin-bottom: 25px;">Título de la serie o película</label>
-            <input class="form-control d-inline" type="text" name="titulo" id="titulo" placeholder="Título de la serie o película" style="margin-bottom: 25px;"/>
+            <label for="puntuacion" class="h4" style="margin-bottom: 25px;">Puntuación de la serie o película</label>
+            <input class="form-control d-inline" type="number" step="0.1" min="0" max="10" name="puntuacion" id="puntuacion" placeholder="Puntuación de la serie o película" style="margin-bottom: 25px;"/>
             <button class="btn btn-secondary btn-block d-inline mt-2" type="submit">Realizar búsqueda</button>
         </fieldset class="form-group">
     </form>
 </div>
 
-	{% if peliculas %}
+{% if peliculas %}
 	<div class="container">
 		<label for="peliculas" class="h4 text-center" style="margin-bottom: 25px;">Películas</label>
 	</div>

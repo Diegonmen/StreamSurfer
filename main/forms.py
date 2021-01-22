@@ -41,3 +41,6 @@ class PlataformaBusquedaForm(forms.Form):
 
 class GeneroBusquedaForm(forms.Form):
     generos = forms.CharField(label="Géneros", widget=forms.RadioSelect(choices=GENEROS), required=True)
+
+class PuntuacionBusquedaForm(forms.Form):
+    puntuacion = forms.CharField(label="Puntuación de la pelicula o serie", widget=forms.NumberInput, required=True)

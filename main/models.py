@@ -22,6 +22,7 @@ class Pelicula(models.Model):
     poster = models.TextField(verbose_name='Póster')
     duracion = models.CharField(max_length=8,verbose_name='Duracion')
     director = models.CharField(max_length=30,verbose_name='Director')
+    sinopsis = models.TextField(verbose_name='Sinopsis')
     generos = models.ManyToManyField(Genero)
     streams = models.ManyToManyField(Stream)
 
@@ -35,6 +36,7 @@ class Serie(models.Model):
     imdb = models.CharField(max_length=3,verbose_name='IMDB')
     poster = models.TextField(verbose_name='Póster')
     temporadas = models.IntegerField(validators=[MinValueValidator(1)])
+    sinopsis = models.TextField(verbose_name='Sinopsis')
     generos = models.ManyToManyField(Genero)
     streams = models.ManyToManyField(Stream)
 

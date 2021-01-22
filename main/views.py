@@ -1,5 +1,5 @@
 from main.models import Genero, Stream, Pelicula, Serie
-from main.forms import TituloBusquedaForm, PlataformaBusquedaForm, GeneroBusquedaForm
+from main.forms import TituloBusquedaForm, PlataformaBusquedaForm, GeneroBusquedaForm, PuntuacionBusquedaForm
 from bs4 import BeautifulSoup
 import urllib.request
 import lxml
@@ -13,7 +13,7 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
 from django.http.response import HttpResponseRedirect, HttpResponse
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Avg, Count
 from django.conf import settings
 from whoosh.index import create_in, open_dir
@@ -21,38 +21,42 @@ from whoosh.fields import ID, Schema, TEXT, NUMERIC, KEYWORD
 from whoosh.qparser import QueryParser, MultifieldParser, OrGroup
 import shutil
 
+#Extrae los datos de la web justwatch.com
 def getDatos():
-    #variables para contar el número de registros que vamos a almacenar
+    #Variables para contar el número de registros que vamos a almacenar
     num_peliculas = 0
     num_series = 0
     num_generos = 0
     num_streams = 0
 
-    #borramos todas las tablas de la BD
+    #Borramos todas las tablas de la BD
     Stream.objects.all().delete()
     Genero.objects.all().delete()
     Pelicula.objects.all().delete()
     Serie.objects.all().delete()
 
+    #Definimos las propiedades del WebDriver (Es necesario modificar la ruta del ejecutable de chromedriver en cada entorno de ejecución)
     options = webdriver.ChromeOptions()
     options.add_argument('--ignore-certificate-errors')
     options.add_argument('--incognito')
     options.add_argument('--headless')
     options.add_argument('log-level=2')
-    driver = webdriver.Chrome(executable_path='C:/Users/34622/Documents/chromedriver.exe', options=options)
-    scroll_pause_time = 2 # You can set your own pause time. My laptop is a bit slow so I use 1 sec
+    driver = webdriver.Chrome(executable_path='C:/Users/soulb/Downloads/chromedriver.exe', options=options)
+    scroll_pause_time = 2 #Tiempo de espera tras simular el scrolleado
 
     lista_enlaces_peliculas = []
     lista_enlaces_series = []
 
     driver.get("https://www.justwatch.com/es/peliculas")
-    time.sleep(3)  # Allow 2 seconds for the web page to open
+    time.sleep(3)  #Esperamos 3 segundos para que cargue correctamente la página
     scrollable = driver.find_element_by_xpath('/html/body/ion-app/div[1]/div[1]/div/div[3]/ion-tab/ion-content/div[3]/div/div/div[2]/div[2]')
     while True:
+        #Recuperamos el HTML DOM a partir del driver para que sea cargado correctamente mediante Javascript
         page = driver.find_element_by_xpath('/html/body/ion-app/div[1]/div[1]/div/div[3]/ion-tab/ion-content/div[3]')
         html = driver.execute_script("return arguments[0].innerHTML;", page) 
         s = BeautifulSoup(html, "lxml")
         peliculas = s.find("div", class_="vue-recycle-scroller").find_all("div", class_="title-list-grid__item")
+        #Se almacenan las 250 primeras películas, evitando que se repitan
         if (("https://www.justwatch.com" + peliculas[-1].a['href'] in lista_enlaces_peliculas) or (len(lista_enlaces_peliculas) >= 250)):
             break
         for pelicula in peliculas:
@@ -60,19 +64,26 @@ def getDatos():
                 break
             enlace = "https://www.justwatch.com" + pelicula.a['href']
             if (enlace not in lista_enlaces_peliculas):
-                auxDriver = webdriver.Chrome(executable_path='C:/Users/34622/Documents/chromedriver.exe', options=options)
+                #Abrimos un segundo WebDriver auxiliar para la ficha de la película en cuestión
+                auxDriver = webdriver.Chrome(executable_path='C:/Users/soulb/Downloads/chromedriver.exe', options=options)
                 auxDriver.get(enlace)
                 time.sleep(2)
                 s = BeautifulSoup(auxDriver.page_source, "lxml")
+                #Tras extraer el HTML con BeautifulSoup, procedemos a extraer los datos
                 datos = s.find("div", id="base").find("div",class_="jw-container").find("div", class_="jw-info-box")
                 tituloyfecha = datos.find("div", class_="title-block").h1.text.strip()  
                 titulo = tituloyfecha[:-6].strip()
                 fecha = int(tituloyfecha[-6:].replace("(", "").replace(")", ""))
-                #si no tiene título original se pone el título
                 if (datos.find("div", class_="title-block").h3):
                     titulo_original = datos.find("div", class_="title-block").h3.string.replace("Título original: ", "").strip()
                 else:
                     titulo_original = titulo 
+                sinopsis = "No hay ninguna sinopsis disponible"
+                datos_sinopsis = datos.find("div", class_="col-sm-push-4").find_all("div", class_=None, recursive=False)
+                if (len(datos_sinopsis) == 4):
+                    sinopsis = datos_sinopsis[3].find("p", class_="text-wrap-pre-line").span.text.strip()
+                if (len(datos_sinopsis) == 5):
+                    sinopsis = datos_sinopsis[4].find("p", class_="text-wrap-pre-line").span.text.strip()
                 poster = datos.find("div", class_="title-poster--no-radius-bottom").find("picture", class_="title-poster__image").find_all("source")[0]['srcset'].split(",")[0].strip()
                 ficha = datos.find("div",class_="detail-infos").find_all("div", class_="clearfix")
                 if (len(ficha[0].find_all("div", class_="jw-scoring-listing__rating")) > 1):
@@ -95,6 +106,7 @@ def getDatos():
                     else:
                         director = "-"
                 streams = []
+                #Almacenamos las opciones de streaming en caso de existir
                 if (datos.find_all("div", class_="price-comparison__grid__row price-comparison__grid__row--stream")):
                     servicios = datos.find_all(lambda tag: tag.name == 'div' and tag.get('class') == ['monetizations'])[0].find("div", class_="price-comparison__grid__row price-comparison__grid__row--stream").find_all("div", class_="price-comparison__grid__row__element")
                     for servicio in servicios:
@@ -104,7 +116,7 @@ def getDatos():
                 lista_enlaces_peliculas.append(enlace)
                 auxDriver.close()
 
-                #almacenamos en la BD
+                #Almacenamos en la BD
                 lista_generos_obj = []
                 for genero in generos:
                     genero_obj, creado = Genero.objects.get_or_create(nombre=genero)
@@ -117,25 +129,28 @@ def getDatos():
                     lista_streams_obj.append(stream_obj)
                     if creado:
                         num_streams = num_streams + 1
-                p = Pelicula.objects.create(titulo=titulo, tituloOriginal=titulo_original, fechaEstreno=fecha, imdb=imdb, poster=poster, director=director, duracion=duracion)
-                #añadimos la lista de géneros y streams
+                p = Pelicula.objects.create(titulo=titulo, tituloOriginal=titulo_original, fechaEstreno=fecha, imdb=imdb, poster=poster, director=director, duracion=duracion, sinopsis=sinopsis)
+                #Añadimos la lista de géneros y streams
                 for g in lista_generos_obj:
                     p.generos.add(g)
                 for st in lista_streams_obj:
                     p.streams.add(st)
                 num_peliculas = num_peliculas + 1
 
+        #Tras extraer todas las películas visibles, se simula un scrolleado para que se carguen las siguientes
         driver.execute_script("arguments[0].scrollIntoView();", scrollable)
         time.sleep(scroll_pause_time)
 
     driver.get("https://www.justwatch.com/es/series")
-    time.sleep(3)  # Allow 2 seconds for the web page to open
+    time.sleep(3)  #Esperamos 3 segundos para que cargue correctamente la página
     scrollable = driver.find_element_by_xpath('/html/body/ion-app/div[1]/div[1]/div/div[3]/ion-tab/ion-content/div[3]/div/div/div[2]/div[2]')
     while True:  
+        #Recuperamos el HTML DOM a partir del driver para que sea cargado correctamente mediante Javascript
         page = driver.find_element_by_xpath('/html/body/ion-app/div[1]/div[1]/div/div[3]/ion-tab/ion-content/div[3]')
         html = driver.execute_script("return arguments[0].innerHTML;", page) 
         s = BeautifulSoup(html, "lxml")
         series = s.find("div", class_="vue-recycle-scroller").find_all("div", class_="title-list-grid__item")
+        #Se almacenan las 250 primeras series, evitando que se repitan
         if (("https://www.justwatch.com" + series[-1].a['href'] in lista_enlaces_series) or (len(lista_enlaces_series) >= 250)):
             break
         for serie in series:
@@ -143,19 +158,26 @@ def getDatos():
                 break
             enlace = "https://www.justwatch.com" + serie.a['href']
             if (enlace not in lista_enlaces_series):
-                auxDriver = webdriver.Chrome(executable_path='C:/Users/34622/Documents/chromedriver.exe', options=options)
+                #Abrimos un segundo WebDriver auxiliar para la ficha de la serie en cuestión
+                auxDriver = webdriver.Chrome(executable_path='C:/Users/soulb/Downloads/chromedriver.exe', options=options)
                 auxDriver.get(enlace)
                 time.sleep(2)
                 s = BeautifulSoup(auxDriver.page_source, "lxml")
+                #Tras extraer el HTML con BeautifulSoup, procedemos a extraer los datos
                 datos = s.find("div", id="base").find("div",class_="jw-container").find("div", class_="jw-info-box")
                 tituloyfecha = datos.find("div", class_="title-block").h1.text.strip()
                 titulo = tituloyfecha[:-6].strip()
                 fecha = int(tituloyfecha[-6:].replace("(", "").replace(")", ""))
-                #si no tiene título original se pone el título
                 if (datos.find("div", class_="title-block").h3):
                     titulo_original = datos.find("div", class_="title-block").h3.string.replace("Título original: ", "").strip()
                 else:
                     titulo_original = titulo 
+                sinopsis = "No hay ninguna sinopsis disponible"
+                datos_sinopsis = datos.find("div", class_="col-sm-push-4").find_all("div", class_=None, recursive=False)
+                if (len(datos_sinopsis) == 5):
+                    sinopsis = datos_sinopsis[4].find("p", class_="text-wrap-pre-line").span.text.strip()
+                if (len(datos_sinopsis) == 6):
+                    sinopsis = datos_sinopsis[5].find("p", class_="text-wrap-pre-line").span.text.strip()
                 poster = datos.find("div", class_="title-poster--no-radius-bottom").find("picture", class_="title-poster__image").find_all("source")[0]['srcset'].split(",")[0].strip()
                 ficha = datos.find("div",class_="detail-infos").find_all("div", class_="clearfix")
                 if (len(ficha[0].find_all("div", class_="jw-scoring-listing__rating")) > 1):
@@ -168,6 +190,7 @@ def getDatos():
                 for genero in lista_generos_aux:
                     generos.append(genero.text.strip().replace(", ", ""))
                 streams = []
+                #Almacenamos las opciones de streaming en caso de existir
                 if (datos.find_all("div", class_="price-comparison__grid__row price-comparison__grid__row--stream")):
                     servicios = datos.find_all(lambda tag: tag.name == 'div' and tag.get('class') == ['monetizations'])[0].find("div", class_="price-comparison__grid__row price-comparison__grid__row--stream").find_all("div", class_="price-comparison__grid__row__element")
                     for servicio in servicios:
@@ -177,7 +200,7 @@ def getDatos():
                 lista_enlaces_series.append(enlace)
                 auxDriver.close()
 
-                #almacenamos en la BD
+                #Almacenamos en la BD
                 lista_generos_obj = []
                 for genero in generos:
                     genero_obj, creado = Genero.objects.get_or_create(nombre=genero)
@@ -190,20 +213,21 @@ def getDatos():
                     lista_streams_obj.append(stream_obj)
                     if creado:
                         num_streams = num_streams + 1
-                show = Serie.objects.create(titulo=titulo, tituloOriginal=titulo_original, fechaEstreno=fecha, imdb=imdb, poster=poster, temporadas=temporadas)
-                #añadimos la lista de géneros y streams
+                show = Serie.objects.create(titulo=titulo, tituloOriginal=titulo_original, fechaEstreno=fecha, imdb=imdb, poster=poster, temporadas=temporadas, sinopsis=sinopsis)
+                #Añadimos la lista de géneros y streams
                 for g in lista_generos_obj:
                     show.generos.add(g)
                 for st in lista_streams_obj:
                     show.streams.add(st)
                 num_series = num_series + 1
 
+        #Tras extraer todas las películas visibles, se simula un scrolleado para que se carguen las siguientes
         driver.execute_script("arguments[0].scrollIntoView();", scrollable)
         time.sleep(scroll_pause_time)
 
     return ((num_peliculas, num_series, num_generos, num_streams))
 
-#carga los datos desde la web en la BD
+#Carga los datos desde la web en la BD
 @login_required(login_url='/actualizar_bd')
 def populateBD(request):
     if request.method=='POST':
@@ -217,6 +241,7 @@ def populateBD(request):
            
     return render(request, 'confirmacion.html')
 
+#Popula la base de datos siempre que realice la acción un administrador logueado
 def actualizarBD(request):
     if request.user.is_authenticated:
         print('Authenticated')
@@ -238,22 +263,33 @@ def actualizarBD(request):
 
     return render(request, 'actualizar_bd.html', {'formulario': formulario})
 
-#muestra el número de películas y series que hay en la BD
+#Muestra el número de películas y series que hay en la BD
 def inicio(request):
     num_peliculas=Pelicula.objects.all().count()
     num_series=Serie.objects.all().count()
     return render(request,'index.html', {'num_peliculas':num_peliculas, 'num_series':num_series})
 
-#muestra un listado con los datos de las películas (título, título original, director, duracion, géneros, fecha de estreno y opciones de streaming)
+#Muestra un listado con los datos de las películas (título, título original, director, duracion, géneros, fecha de estreno y opciones de streaming)
 def lista_peliculas(request):
     peliculas=Pelicula.objects.all()
-    return render(request,'lista_peliculas.html', {'peliculas':peliculas, 'STATIC_URL': settings.STATIC_URL})
+    return render(request,'lista_peliculas.html', {'peliculas':peliculas})
 
-#muestra un listado con los datos de las series (título, título original, temporadas, géneros, fecha de estreno y opciones de streaming)
+#Muestra detalles de una pelicula
+def detalles_pelicula(request, id_pelicula):
+    pelicula = get_object_or_404(Pelicula, pk=id_pelicula)
+    return render(request,'detalles_pelicula.html',{'pelicula':pelicula})
+
+#Muestra un listado con los datos de las series (título, título original, temporadas, géneros, fecha de estreno y opciones de streaming)
 def lista_series(request):
     series=Serie.objects.all()
-    return render(request,'lista_series.html', {'series':series, 'STATIC_URL': settings.STATIC_URL})
+    return render(request,'lista_series.html', {'series':series})
 
+#Muestra detalles de una serie
+def detalles_serie(request, id_serie):
+    serie = get_object_or_404(Serie, pk=id_serie)
+    return render(request,'detalles_serie.html',{'serie':serie})
+
+#Definición del Schema de Whoosh para películas
 def schemaPelicula():
     schem = Schema(idPelicula=ID(stored=True, unique=True), titulo=TEXT(
         stored=True), tituloOriginal=TEXT(stored=True), imdb=TEXT(stored=True),
@@ -262,6 +298,7 @@ def schemaPelicula():
         plataformas=KEYWORD(stored=True,commas=True), links=KEYWORD(stored=True,commas=True))
     return schem
 
+#Definición del Schema de Whoosh para series
 def schemaSerie():
     schem = Schema(idSerie=ID(stored=True, unique=True), titulo=TEXT(
         stored=True), tituloOriginal=TEXT(stored=True), imdb=TEXT(stored=True),
@@ -270,11 +307,12 @@ def schemaSerie():
         links=KEYWORD(stored=True,commas=True))
     return schem
 
+#Carga la base de datos de Whoosh extrayendo los datos de la web justwatch.com
 def getWhooshInfo():
     pelicula_directory = './' + 'Pelicula'
     serie_directory = './' + 'Serie'
 
-    #eliminamos el directorio del índice, si existe
+    #Eliminamos el directorio del índice, si existe
     if os.path.exists(pelicula_directory):
         shutil.rmtree(pelicula_directory)
     os.mkdir(pelicula_directory)
@@ -293,22 +331,25 @@ def getWhooshInfo():
     lista_enlaces_peliculas = []
     lista_enlaces_series = []
 
+    #Definimos las propiedades del WebDriver (Es necesario modificar la ruta del ejecutable de chromedriver en cada entorno de ejecución)
     options = webdriver.ChromeOptions()
     options.add_argument('--ignore-certificate-errors')
     options.add_argument('--incognito')
     options.add_argument('--headless')
     options.add_argument('log-level=2')
     driver = webdriver.Chrome(executable_path='C:/Users/soulb/Downloads/chromedriver.exe', options=options)
-    scroll_pause_time = 2 # You can set your own pause time. My laptop is a bit slow so I use 1 sec
+    scroll_pause_time = 2 #Tiempo de espera tras simular el scrolleado
 
     driver.get("https://www.justwatch.com/es/peliculas")
-    time.sleep(3)  # Allow 2 seconds for the web page to open
+    time.sleep(3)  #Esperamos 3 segundos para que cargue correctamente la página
     scrollable = driver.find_element_by_xpath('/html/body/ion-app/div[1]/div[1]/div/div[3]/ion-tab/ion-content/div[3]/div/div/div[2]/div[2]')
     while True:
+        #Recuperamos el HTML DOM a partir del driver para que sea cargado correctamente mediante Javascript
         page = driver.find_element_by_xpath('/html/body/ion-app/div[1]/div[1]/div/div[3]/ion-tab/ion-content/div[3]')
         html = driver.execute_script("return arguments[0].innerHTML;", page) 
         s = BeautifulSoup(html, "lxml")
         peliculas = s.find("div", class_="vue-recycle-scroller").find_all("div", class_="title-list-grid__item")
+        #Se almacenan las 250 primeras películas, evitando que se repitan
         if (("https://www.justwatch.com" + peliculas[-1].a['href'] in lista_enlaces_peliculas) or (len(lista_enlaces_peliculas) >= 250)):
             break
         for pelicula in peliculas:
@@ -316,15 +357,16 @@ def getWhooshInfo():
                 break
             enlace = "https://www.justwatch.com" + pelicula.a['href']
             if (enlace not in lista_enlaces_peliculas):
+                #Abrimos un segundo WebDriver auxiliar para la ficha de la película en cuestión
                 auxDriver = webdriver.Chrome(executable_path='C:/Users/soulb/Downloads/chromedriver.exe', options=options)
                 auxDriver.get(enlace)
                 time.sleep(2)
                 s = BeautifulSoup(auxDriver.page_source, "lxml")
+                #Tras extraer el HTML con BeautifulSoup, procedemos a extraer los datos
                 datos = s.find("div", id="base").find("div",class_="jw-container").find("div", class_="jw-info-box")
                 tituloyfecha = datos.find("div", class_="title-block").h1.text.strip()  
                 titulo = tituloyfecha[:-6].strip()
                 fecha = int(tituloyfecha[-6:].replace("(", "").replace(")", ""))
-                #si no tiene título original se pone el título
                 if (datos.find("div", class_="title-block").h3):
                     titulo_original = datos.find("div", class_="title-block").h3.string.replace("Título original: ", "").strip()
                 else:
@@ -352,6 +394,7 @@ def getWhooshInfo():
                         director = "-"
                 plataformas = ""
                 links = ""
+                #Almacenamos las opciones de streaming en caso de existir
                 if (datos.find_all("div", class_="price-comparison__grid__row price-comparison__grid__row--stream")):
                     servicios = datos.find_all(lambda tag: tag.name == 'div' and tag.get('class') == ['monetizations'])[0].find("div", class_="price-comparison__grid__row price-comparison__grid__row--stream").find_all("div", class_="price-comparison__grid__row__element")
                     for servicio in servicios:
@@ -366,10 +409,12 @@ def getWhooshInfo():
                 lista_enlaces_peliculas.append(enlace)
                 auxDriver.close()
 
+                #Guardamos en base de datos una nueva instancia del Schema
                 writer1.add_document(idPelicula=str(count_peliculas), titulo=str(titulo), tituloOriginal=str(titulo_original), imdb=str(imdb), fechaEstreno=str(fecha),
                     poster=str(poster), duracion=str(duracion), director=str(director), generos=str(generos), plataformas=str(plataformas), links=str(links))
                 count_peliculas += 1
 
+        #Tras extraer todas las películas visibles, se simula un scrolleado para que se carguen las siguientes
         driver.execute_script("arguments[0].scrollIntoView();", scrollable)
         time.sleep(scroll_pause_time)
 
@@ -377,10 +422,12 @@ def getWhooshInfo():
     time.sleep(3)  # Allow 2 seconds for the web page to open
     scrollable = driver.find_element_by_xpath('/html/body/ion-app/div[1]/div[1]/div/div[3]/ion-tab/ion-content/div[3]/div/div/div[2]/div[2]')
     while True:  
+        #Recuperamos el HTML DOM a partir del driver para que sea cargado correctamente mediante Javascript
         page = driver.find_element_by_xpath('/html/body/ion-app/div[1]/div[1]/div/div[3]/ion-tab/ion-content/div[3]')
         html = driver.execute_script("return arguments[0].innerHTML;", page) 
         s = BeautifulSoup(html, "lxml")
         series = s.find("div", class_="vue-recycle-scroller").find_all("div", class_="title-list-grid__item")
+        #Se almacenan las 250 primeras series, evitando que se repitan
         if (("https://www.justwatch.com" + series[-1].a['href'] in lista_enlaces_series) or (len(lista_enlaces_series) >= 250)):
             break
         for serie in series:
@@ -388,15 +435,16 @@ def getWhooshInfo():
                 break
             enlace = "https://www.justwatch.com" + serie.a['href']
             if (enlace not in lista_enlaces_series):
+                #Abrimos un segundo WebDriver auxiliar para la ficha de la serie en cuestión
                 auxDriver = webdriver.Chrome(executable_path='C:/Users/soulb/Downloads/chromedriver.exe', options=options)
                 auxDriver.get(enlace)
                 time.sleep(2)
                 s = BeautifulSoup(auxDriver.page_source, "lxml")
+                #Tras extraer el HTML con BeautifulSoup, procedemos a extraer los datos
                 datos = s.find("div", id="base").find("div",class_="jw-container").find("div", class_="jw-info-box")
                 tituloyfecha = datos.find("div", class_="title-block").h1.text.strip()
                 titulo = tituloyfecha[:-6].strip()
                 fecha = int(tituloyfecha[-6:].replace("(", "").replace(")", ""))
-                #si no tiene título original se pone el título
                 if (datos.find("div", class_="title-block").h3):
                     titulo_original = datos.find("div", class_="title-block").h3.string.replace("Título original: ", "").strip()
                 else:
@@ -414,6 +462,7 @@ def getWhooshInfo():
                     generos += genero.text.strip()
                 plataformas = ""
                 links = ""
+                #Almacenamos las opciones de streaming en caso de existir
                 if (datos.find_all("div", class_="price-comparison__grid__row price-comparison__grid__row--stream")):
                     servicios = datos.find_all(lambda tag: tag.name == 'div' and tag.get('class') == ['monetizations'])[0].find("div", class_="price-comparison__grid__row price-comparison__grid__row--stream").find_all("div", class_="price-comparison__grid__row__element")
                     for servicio in servicios:
@@ -428,17 +477,19 @@ def getWhooshInfo():
                 lista_enlaces_series.append(enlace)
                 auxDriver.close()
 
+                #Guardamos en base de datos una nueva instancia del Schema
                 writer2.add_document(idSerie=str(count_peliculas), titulo=str(titulo), tituloOriginal=str(titulo_original), imdb=str(imdb), fechaEstreno=str(fecha),
                     poster=str(poster), temporadas=str(temporadas), generos=str(generos), plataformas=str(plataformas), links=str(links))
                 count_series += 1
 
+        #Tras extraer todas las películas visibles, se simula un scrolleado para que se carguen las siguientes
         driver.execute_script("arguments[0].scrollIntoView();", scrollable)
         time.sleep(scroll_pause_time)
 
     writer1.commit()
     writer2.commit()
 
-#carga los datos desde la web en Whoosh
+#Carga los datos desde la web en Whoosh
 @login_required(login_url='/actualizar_whoosh')
 def populateWhoosh(request):
     if request.method=='POST':
@@ -451,6 +502,7 @@ def populateWhoosh(request):
            
     return render(request, 'confirmacion.html')
 
+#Popula la base de datos de Whoosh siempre que realice la acción un administrador logueado
 def actualizarWhoosh(request):
     if request.user.is_authenticated:
         print('Authenticated')
@@ -472,6 +524,7 @@ def actualizarWhoosh(request):
 
     return render(request, 'actualizar_whoosh.html', {'formulario': formulario})
 
+#Búsqueda de series y películas por su título
 def buscarPorTitulo(request):
     if request.method == 'POST':
         form = TituloBusquedaForm(request.POST, request.FILES)
@@ -480,33 +533,30 @@ def buscarPorTitulo(request):
             ix = open_dir('./Pelicula')
             searcher = ix.searcher()
             query = MultifieldParser(
-                ["titulo","tituloOriginal"], ix.schema, group=OrGroup).parse(titulo)
+                ["titulo","tituloOriginal"], ix.schema).parse(titulo)
             results = searcher.search(query)
-            peliculas = list(results)
-            for pelicula in peliculas:
-                plataformas_pelicula = pelicula.fields()['plataformas'].strip('][').replace("'", "").split(', ')
-                links_pelicula = pelicula.fields()['links'].strip('][').replace("'", "").split(', ')
-                zip_iterator_pelicula = zip(plataformas_pelicula, links_pelicula)
-                streams_pelicula = dict(zip_iterator_pelicula)
-                pelicula.a = types.SimpleNamespace()
-                setattr(pelicula.a, 'streamsPelicula', streams_pelicula)
+            results_peliculas = list(results)
+            peliculas = []
+            series = []
+            for pelicula in results_peliculas:
+                aux = Pelicula.objects.filter(titulo=pelicula.fields()['titulo'])
+                if (len(aux) > 0):
+                    peliculas.append(aux[0])
             ixA = open_dir("./Serie")
             searcher = ixA.searcher()
             query = MultifieldParser(
-                ["titulo","tituloOriginal"], ixA.schema, group=OrGroup).parse(titulo)
+                ["titulo","tituloOriginal"], ixA.schema).parse(titulo)
             results = searcher.search(query)
-            series = list(results)
-            for serie in series:
-                plataformas_serie = serie.fields()['plataformas'].strip('][').replace("'", "").split(', ')
-                links_serie = serie.fields()['links'].strip('][').replace("'", "").split(', ')
-                zip_iterator_serie = zip(plataformas_serie, links_serie)
-                streams_serie = dict(zip_iterator_serie)
-                serie.a = types.SimpleNamespace()
-                setattr(serie.a, 'streamsSerie', streams_serie)
+            results_series = list(results)
+            for serie in results_series:
+                aux = Serie.objects.filter(titulo=serie.fields()['titulo'])
+                if (len(aux) > 0):
+                    series.append(aux[0])
             return render(request, 'busqueda_titulo.html', {'peliculas': peliculas, 'series': series})
     form = TituloBusquedaForm()
     return render(request, 'busqueda_titulo.html', {'form': form})
 
+#Búsqueda de títulos según la plataforma de streaming en que están disponibles
 def buscarPorPlataforma(request):
     if request.method == 'POST':
         form = PlataformaBusquedaForm(request.POST, request.FILES)
@@ -517,31 +567,28 @@ def buscarPorPlataforma(request):
             query = QueryParser(
                 "plataformas", ix.schema).parse("'" + plataformas + "'")
             results = searcher.search(query, limit=250)
-            peliculas = list(results)
-            for pelicula in peliculas:
-                plataformas_pelicula = pelicula.fields()['plataformas'].strip('][').replace("'", "").split(', ')
-                links_pelicula = pelicula.fields()['links'].strip('][').replace("'", "").split(', ')
-                zip_iterator_pelicula = zip(plataformas_pelicula, links_pelicula)
-                streams_pelicula = dict(zip_iterator_pelicula)
-                pelicula.a = types.SimpleNamespace()
-                setattr(pelicula.a, 'streamsPelicula', streams_pelicula)
+            results_peliculas = list(results)
+            peliculas = []
+            series = []
+            for pelicula in results_peliculas:
+                aux = Pelicula.objects.filter(titulo=pelicula.fields()['titulo'])
+                if (len(aux) > 0):
+                    peliculas.append(aux[0])
             ixA = open_dir("./Serie")
             searcher = ixA.searcher()
             query = QueryParser(
                 "plataformas", ixA.schema).parse("'" + plataformas + "'")
             results = searcher.search(query, limit=250)
-            series = list(results)
-            for serie in series:
-                plataformas_serie = serie.fields()['plataformas'].strip('][').replace("'", "").split(', ')
-                links_serie = serie.fields()['links'].strip('][').replace("'", "").split(', ')
-                zip_iterator_serie = zip(plataformas_serie, links_serie)
-                streams_serie = dict(zip_iterator_serie)
-                serie.a = types.SimpleNamespace()
-                setattr(serie.a, 'streamsSerie', streams_serie)
+            results_series = list(results)
+            for serie in results_series:
+                aux = Serie.objects.filter(titulo=serie.fields()['titulo'])
+                if (len(aux) > 0):
+                    series.append(aux[0])
             return render(request, 'busqueda_plataforma.html', {'peliculas': peliculas, 'series': series})
     form = TituloBusquedaForm()
     return render(request, 'busqueda_plataforma.html', {'form': form})
 
+#Busqueda de títulos según el género al que pertenecen
 def buscarPorGenero(request):
     if request.method == 'POST':
         form = GeneroBusquedaForm(request.POST, request.FILES)
@@ -556,29 +603,48 @@ def buscarPorGenero(request):
             query = QueryParser(
                 "generos", ix.schema).parse("'" + generos + "'")
             results = searcher.search(query, limit=250)
-            peliculas = list(results)
-            for pelicula in peliculas:
-                test1 = pelicula.fields()['plataformas']
-                test2 = pelicula.fields()['links']
-                plataformas_pelicula = pelicula.fields()['plataformas'].strip('][').replace("'", "").split(', ')
-                links_pelicula = pelicula.fields()['links'].strip('][').replace("'", "").split(', ')
-                zip_iterator_pelicula = zip(plataformas_pelicula, links_pelicula)
-                streams_pelicula = dict(zip_iterator_pelicula)
-                pelicula.a = types.SimpleNamespace()
-                setattr(pelicula.a, 'streamsPelicula', streams_pelicula)
+            results_peliculas = list(results)
+            peliculas = []
+            series = []
+            for pelicula in results_peliculas:
+                aux = Pelicula.objects.filter(titulo=pelicula.fields()['titulo'])
+                if (len(aux) > 0):
+                    peliculas.append(aux[0])
             ixA = open_dir("./Serie")
             searcher = ixA.searcher()
             query = QueryParser(
                 "generos", ixA.schema).parse("'" + generos + "'")
             results = searcher.search(query, limit=250)
-            series = list(results)
-            for serie in series:
-                plataformas_serie = serie.fields()['plataformas'].strip('][').replace("'", "").split(', ')
-                links_serie = serie.fields()['links'].strip('][').replace("'", "").split(', ')
-                zip_iterator_serie = zip(plataformas_serie, links_serie)
-                streams_serie = dict(zip_iterator_serie)
-                serie.a = types.SimpleNamespace()
-                setattr(serie.a, 'streamsSerie', streams_serie)
+            results_series = list(results)
+            for serie in results_series:
+                aux = Serie.objects.filter(titulo=serie.fields()['titulo'])
+                if (len(aux) > 0):
+                    series.append(aux[0])
             return render(request, 'busqueda_genero.html', {'peliculas': peliculas, 'series': series})
     form = TituloBusquedaForm()
     return render(request, 'busqueda_genero.html', {'form': form})
+
+#Busqueda de títulos con una puntuación igual o mayor que la proporcionada
+def buscarPorPuntuacion(request):
+    formulario = PuntuacionBusquedaForm()
+    peliculas = []
+    series = []
+    plataformas_peliculas = []
+    plataformas_series = []
+    links_peliculas = []
+    links_series = []
+
+    if request.method == 'POST':
+        formulario = PuntuacionBusquedaForm(request.POST)
+        if formulario.is_valid():
+            for pelicula in Pelicula.objects.all():
+                if (pelicula.imdb != "-"):
+                    if(pelicula.imdb >= formulario.cleaned_data['puntuacion']):
+                        test = pelicula.generos
+                        peliculas.append(pelicula)
+            for serie in Serie.objects.all():
+                if (serie.imdb != "-"):
+                    if(serie.imdb >= formulario.cleaned_data['puntuacion']):
+                        series.append(serie)
+
+    return render(request, 'busqueda_puntuacion.html', {'formulario': formulario, 'peliculas': peliculas, 'series': series})
