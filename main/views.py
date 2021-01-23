@@ -6,6 +6,11 @@ import lxml
 import time
 import os
 import types
+import shutil
+import pandas as pd
+from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.feature_extraction.text import CountVectorizer
+from rake_nltk import Metric, Rake
 from datetime import datetime
 from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
@@ -19,7 +24,6 @@ from django.conf import settings
 from whoosh.index import create_in, open_dir
 from whoosh.fields import ID, Schema, TEXT, NUMERIC, KEYWORD
 from whoosh.qparser import QueryParser, MultifieldParser, OrGroup
-import shutil
 
 #Extrae los datos de la web justwatch.com
 def getDatos():
@@ -277,7 +281,12 @@ def lista_peliculas(request):
 #Muestra detalles de una pelicula
 def detalles_pelicula(request, id_pelicula):
     pelicula = get_object_or_404(Pelicula, pk=id_pelicula)
-    return render(request,'detalles_pelicula.html',{'pelicula':pelicula})
+    peliculas_rc = recomendarPeliculas(id_pelicula)
+    peliculas_recomendadas = []
+    for p in peliculas_rc:
+        pelicula_aux = Pelicula.objects.get(titulo = p)
+        peliculas_recomendadas.append(pelicula_aux)
+    return render(request,'detalles_pelicula.html',{'pelicula':pelicula, 'peliculas_recomendadas': peliculas_recomendadas})
 
 #Muestra un listado con los datos de las series (título, título original, temporadas, géneros, fecha de estreno y opciones de streaming)
 def lista_series(request):
@@ -648,3 +657,58 @@ def buscarPorPuntuacion(request):
                         series.append(serie)
 
     return render(request, 'busqueda_puntuacion.html', {'formulario': formulario, 'peliculas': peliculas, 'series': series})
+
+def recomendarPeliculas(id_pelicula):
+    pelicula = get_object_or_404(Pelicula, pk=id_pelicula)
+    peliculas = Pelicula.objects.all()
+
+    #Se crean los valores de la columna de titulos
+    movies_titles = []
+    for movie in peliculas:
+        if movie.titulo != pelicula.titulo:
+            movies_titles.append(movie.titulo)
+    movies_titles.append(pelicula.titulo)
+
+    #Se crean los valores de la columna de valores
+    values = []
+    for movie in peliculas:
+        movie_values = []
+        generos = ''
+        if movie.titulo != pelicula.titulo:
+            for genero in movie.generos.all():
+                generos += ', ' + genero.nombre
+            movie_values.append(generos[2:])
+            values.append(movie_values)
+    movie_values = []
+    generos = ''
+    for genero in pelicula.generos.all():
+            generos += ', ' + genero.nombre
+    movie_values.append(generos[2:])
+    values.append(movie_values)
+
+    #Se crea la tabla
+    d = {'titulo': movies_titles, 'valores': values}
+    df = pd.DataFrame(data=d, index=movies_titles)
+    df = df[['titulo', 'valores']]
+    df.head()
+    df['key_words'] = ''
+    for index, row in df.iterrows():
+        valor = row['valores']
+        r = Rake()
+        r.extract_keywords_from_text(valor[0])
+        key_words_dict_scores = r.get_word_degrees()
+        row['key_words'] = str(list(key_words_dict_scores.keys()))
+    df.drop(columns=['valores'], inplace=True)
+    count = CountVectorizer()
+    count_matrix = count.fit_transform(df['key_words'])
+    cosine_sim = cosine_similarity(count_matrix, count_matrix)
+    recommended_movies = []
+    indices = pd.Series(df.index)
+    idx = indices[indices == pelicula.titulo].index[0]
+    score_series = pd.Series(cosine_sim[idx]).sort_values(ascending=False)
+    top_3_indexes = list(score_series.iloc[1:4].index)
+    for i in top_3_indexes:
+        recommended_movies.append(list(df.index)[i])
+
+    return recommended_movies
+

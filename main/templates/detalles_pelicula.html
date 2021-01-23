@@ -87,6 +87,27 @@
             <p class="card-text">{{pelicula.sinopsis}}</p>
         </div>
     </div>
+
+    <div class="container">
+		<label class="h4 text-center" style="margin-bottom: 50px;margin-top: 50px;">Películas similares</label>
+	</div>
+
+    <div class="container">
+        <div class="row">
+            {% for pelicula in peliculas_recomendadas %}
+            <div class="col" style="padding-bottom:30px">
+                <div class="card" style="width: 18rem;">
+                    <a href="/peliculas/{{pelicula.id}}"><img class="card-img-top" src="{{pelicula.poster}}" alt="Poster"></a>
+                    <div class="card-body">
+                        <h5 class="card-title">{{pelicula.titulo}}</h5>
+                        <p class="card-text">Director: {{pelicula.director}}</p>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}	
+        </div>
+    </div>
+
     <div clas="text-center">
         <img class="my-5" src="https://i.ibb.co/6wy39vf/logo.png" />
     </div>
