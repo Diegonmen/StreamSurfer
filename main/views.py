@@ -34,10 +34,10 @@ def getDatos():
     num_streams = 0
 
     #Borramos todas las tablas de la BD
-    #Stream.objects.all().delete()
-    #Genero.objects.all().delete()
-    #Pelicula.objects.all().delete()
-    #Serie.objects.all().delete()
+    Stream.objects.all().delete()
+    Genero.objects.all().delete()
+    Pelicula.objects.all().delete()
+    Serie.objects.all().delete()
 
     #Definimos las propiedades del WebDriver
     options = webdriver.ChromeOptions()
