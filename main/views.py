@@ -296,7 +296,12 @@ def lista_series(request):
 #Muestra detalles de una serie
 def detalles_serie(request, id_serie):
     serie = get_object_or_404(Serie, pk=id_serie)
-    return render(request,'detalles_serie.html',{'serie':serie})
+    series_rc = recomendarSeries(id_serie)
+    series_recomendadas = []
+    for s in series_rc:
+        serie_aux = Serie.objects.get(titulo = s)
+        series_recomendadas.append(serie_aux)
+    return render(request,'detalles_serie.html',{'serie':serie, 'series_recomendadas': series_recomendadas})
 
 #Definición del Schema de Whoosh para películas
 def schemaPelicula():
@@ -665,7 +670,7 @@ def recomendarPeliculas(id_pelicula):
     #Se crean los valores de la columna de titulos
     movies_titles = []
     for movie in peliculas:
-        if movie.titulo != pelicula.titulo:
+        if str(movie.titulo) != str(pelicula.titulo):
             movies_titles.append(movie.titulo)
     movies_titles.append(pelicula.titulo)
 
@@ -674,7 +679,7 @@ def recomendarPeliculas(id_pelicula):
     for movie in peliculas:
         movie_values = []
         generos = ''
-        if movie.titulo != pelicula.titulo:
+        if str(movie.titulo) != str(pelicula.titulo):
             for genero in movie.generos.all():
                 generos += ', ' + genero.nombre
             movie_values.append(generos[2:])
@@ -682,7 +687,7 @@ def recomendarPeliculas(id_pelicula):
     movie_values = []
     generos = ''
     for genero in pelicula.generos.all():
-            generos += ', ' + genero.nombre
+        generos += ', ' + genero.nombre
     movie_values.append(generos[2:])
     values.append(movie_values)
 
@@ -709,6 +714,65 @@ def recomendarPeliculas(id_pelicula):
     top_3_indexes = list(score_series.iloc[1:4].index)
     for i in top_3_indexes:
         recommended_movies.append(list(df.index)[i])
+    if str(pelicula.titulo) in recommended_movies:
+        recommended_movies.remove(str(pelicula.titulo))
+        recommended_movies.append(list(df.index)[score_series.iloc[4:5].index[0]])
 
     return recommended_movies
 
+def recomendarSeries(id_serie):
+    serie = get_object_or_404(Serie, pk=id_serie)
+    series = Serie.objects.all()
+
+    #Se crean los valores de la columna de titulos
+    shows_titles = []
+    for show in series:
+        if str(show.titulo) != str(serie.titulo):
+            shows_titles.append(show.titulo)
+    shows_titles.append(serie.titulo)
+
+    #Se crean los valores de la columna de valores
+    values = []
+    for show in series:
+        show_values = []
+        generos = ''
+        if str(show.titulo) != str(serie.titulo):
+            for genero in show.generos.all():
+                generos += ', ' + genero.nombre
+            show_values.append(generos[2:])
+            values.append(show_values)
+    shows_values = []
+    generos = ''
+    for genero in serie.generos.all():
+        generos += ', ' + genero.nombre
+    shows_values.append(generos[2:])
+    values.append(shows_values)
+
+    #Se crea la tabla
+    d = {'titulo': shows_titles, 'valores': values}
+    df = pd.DataFrame(data=d, index=shows_titles)
+    df = df[['titulo', 'valores']]
+    df.head()
+    df['key_words'] = ''
+    for index, row in df.iterrows():
+        valor = row['valores']
+        r = Rake()
+        r.extract_keywords_from_text(valor[0])
+        key_words_dict_scores = r.get_word_degrees()
+        row['key_words'] = str(list(key_words_dict_scores.keys()))
+    df.drop(columns=['valores'], inplace=True)
+    count = CountVectorizer()
+    count_matrix = count.fit_transform(df['key_words'])
+    cosine_sim = cosine_similarity(count_matrix, count_matrix)
+    recommended_shows = []
+    indices = pd.Series(df.index)
+    idx = indices[indices == serie.titulo].index[0]
+    score_series = pd.Series(cosine_sim[idx]).sort_values(ascending=False)
+    top_3_indexes = list(score_series.iloc[1:4].index)
+    for i in top_3_indexes:
+        recommended_shows.append(list(df.index)[i])
+    if str(serie.titulo) in recommended_shows:
+        recommended_shows.remove(str(serie.titulo))
+        recommended_shows.append(list(df.index)[score_series.iloc[4:5].index[0]])
+
+    return recommended_shows

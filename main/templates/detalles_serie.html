@@ -85,6 +85,27 @@
             <p class="card-text">{{serie.sinopsis}}</p>
         </div>
     </div>
+
+    <div class="container">
+		<label class="h4 text-center" style="margin-bottom: 50px;margin-top: 50px;">Series similares</label>
+	</div>
+    
+    <div class="container">
+        <div class="row">
+            {% for serie in series_recomendadas %}
+            <div class="col" style="padding-bottom:30px">
+                <div class="card" style="width: 18rem;">
+                    <a href="/series/{{serie.id}}"><img class="card-img-top" src="{{serie.poster}}" alt="Poster"></a>
+                    <div class="card-body">
+                        <h5 class="card-title">{{serie.titulo}}</h5>
+                        <p class="card-text">Temporadas: {{serie.temporadas}}</p>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}	
+        </div>
+    </div>
+
     <div clas="text-center">
         <img class="my-5" src="https://i.ibb.co/6wy39vf/logo.png" />
     </div>
