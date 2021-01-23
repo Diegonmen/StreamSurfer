@@ -34,18 +34,19 @@ def getDatos():
     num_streams = 0
 
     #Borramos todas las tablas de la BD
-    Stream.objects.all().delete()
-    Genero.objects.all().delete()
-    Pelicula.objects.all().delete()
-    Serie.objects.all().delete()
+    #Stream.objects.all().delete()
+    #Genero.objects.all().delete()
+    #Pelicula.objects.all().delete()
+    #Serie.objects.all().delete()
 
-    #Definimos las propiedades del WebDriver (Es necesario modificar la ruta del ejecutable de chromedriver en cada entorno de ejecución)
+    #Definimos las propiedades del WebDriver
     options = webdriver.ChromeOptions()
     options.add_argument('--ignore-certificate-errors')
     options.add_argument('--incognito')
     options.add_argument('--headless')
     options.add_argument('log-level=2')
-    driver = webdriver.Chrome(executable_path='C:/Users/soulb/Downloads/chromedriver.exe', options=options)
+    chromedriver_path = os.path.abspath(os.getcwd()).replace('\\', '/') + '/chromedriver.exe'
+    driver = webdriver.Chrome(executable_path=chromedriver_path, options=options)
     scroll_pause_time = 2 #Tiempo de espera tras simular el scrolleado
 
     lista_enlaces_peliculas = []
@@ -345,13 +346,14 @@ def getWhooshInfo():
     lista_enlaces_peliculas = []
     lista_enlaces_series = []
 
-    #Definimos las propiedades del WebDriver (Es necesario modificar la ruta del ejecutable de chromedriver en cada entorno de ejecución)
+    #Definimos las propiedades del WebDriver
     options = webdriver.ChromeOptions()
     options.add_argument('--ignore-certificate-errors')
     options.add_argument('--incognito')
     options.add_argument('--headless')
     options.add_argument('log-level=2')
-    driver = webdriver.Chrome(executable_path='C:/Users/soulb/Downloads/chromedriver.exe', options=options)
+    chromedriver_path = os.path.abspath(os.getcwd()).replace('\\', '/') + '/chromedriver.exe'
+    driver = webdriver.Chrome(executable_path=chromedriver_path, options=options)
     scroll_pause_time = 2 #Tiempo de espera tras simular el scrolleado
 
     driver.get("https://www.justwatch.com/es/peliculas")
